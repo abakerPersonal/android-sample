@@ -1,4 +1,4 @@
-package com.sonos.abaker.android_sample.discover;
+package com.sonos.abaker.android_sample.model;
 
 import java.util.Date;
 
