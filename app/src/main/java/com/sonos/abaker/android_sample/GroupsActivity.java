@@ -1,12 +1,15 @@
 package com.sonos.abaker.android_sample;
 
 import android.databinding.DataBindingUtil;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 
+import com.sonos.abaker.android_sample.connect.GroupConnectService;
 import com.sonos.abaker.android_sample.databinding.GroupsActivityBinding;
 import com.sonos.abaker.android_sample.model.Group;
 import com.sonos.abaker.android_sample.discover.GroupDiscoveryService;
@@ -20,9 +23,12 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 
-public class GroupsActivity extends AppCompatActivity implements GroupsActivityHandler {
+public class GroupsActivity extends AppCompatActivity implements GroupsActivityHandler, GroupsAdapter.GroupAdapterOnClickListener {
+    private static final String LOG_TAG = GroupsActivity.class.getSimpleName();
 
-    final GroupDiscoveryService groupDiscoveryService = new GroupDiscoveryServiceImpl();
+    private GroupDiscoveryService groupDiscoveryService;
+    private GroupConnectService groupConnectService;
+
     private RecyclerView recyclerView;
     private GroupsAdapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
@@ -30,6 +36,9 @@ public class GroupsActivity extends AppCompatActivity implements GroupsActivityH
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        groupDiscoveryService = new GroupDiscoveryServiceImpl();
+        groupConnectService = new GroupConnectService(this);
 
         setContentView(R.layout.groups_activity);
 
@@ -41,7 +50,7 @@ public class GroupsActivity extends AppCompatActivity implements GroupsActivityH
         layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        mAdapter = new GroupsAdapter();
+        mAdapter = new GroupsAdapter(this);
         recyclerView.setAdapter(mAdapter);
 
         groupDiscoveryService.getDiscoveredGroupsObservable()
@@ -80,5 +89,24 @@ public class GroupsActivity extends AppCompatActivity implements GroupsActivityH
     public void onClickRefresh(View view) {
         groupDiscoveryService.stop();
         groupDiscoveryService.start();
+    }
+
+    @Override
+    public void onClick(Group group) {
+        Log.d(LOG_TAG, group.getName());
+
+        new ConnectAsyncTask().execute(group);
+
+
+    }
+
+    private class ConnectAsyncTask extends AsyncTask<Group, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Group... group) {
+            groupConnectService.openSocket(group[0].getWebsocketURL());
+            Log.d(LOG_TAG, groupConnectService.getStatus().toString());
+            return null;
+        }
     }
 }

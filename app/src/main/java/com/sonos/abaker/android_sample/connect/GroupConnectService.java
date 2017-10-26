@@ -13,6 +13,7 @@ import com.neovisionaries.ws.client.WebSocketListener;
 import com.neovisionaries.ws.client.WebSocketState;
 import com.sonos.abaker.android_sample.R;
 import com.sonos.abaker.android_sample.discover.GroupDiscoveryService;
+import com.sonos.abaker.android_sample.model.Group;
 
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 
@@ -52,17 +53,21 @@ public class GroupConnectService {
             sslContext.init(null, trustMgrFactory.getTrustManagers(), null);
 
             factory.setConnectionTimeout(CONNECTION_TIMEOUT);
+            factory.setVerifyHostname(false);
             factory.setSSLContext(sslContext);
         } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException | CertificateException | IOException exception) {
             Log.e(LOG_TAG, "There was an error initializing the truststore with the certificate", exception);
         }
     }
 
+    public void send(Group group) {
+        socket.sendText("[{ \"namespace\": \"groupVolume:1\", \"command\": \"setVolume\",\"householdId\": \"ABCD1234\", \"groupId\": \"XYZ-123abc456:12\"},{  \"volume\": 80 }]");
+    }
 
-    private void openSocket(String socketUri) {
+    public void openSocket(String socketUri) {
         try {
             socket = factory.createSocket(socketUri);
-            socket.addHeader("Sec-WebSocket-Protocol", "v1.api.smartspeaker.audio");
+            //socket.addHeader("Sec-WebSocket-Protocol", "v1.api.smartspeaker.audio");
             socket.addHeader("X-Sonos-Api-Key", "4073edd5-afe9-47a2-ae79-4e90fc4f2236");
             socket.addListener(new WebSocketAdapter() {
                 @Override
@@ -76,13 +81,47 @@ public class GroupConnectService {
                     super.onConnectError(websocket, exception);
                     Log.d(LOG_TAG, ">>>>>>>>>>> Socket Disconnected");
                 }
+
+                @Override
+                public void onError(WebSocket websocket, WebSocketException cause) throws Exception {
+                    super.onError(websocket, cause);
+                    Log.d(LOG_TAG, ">>>>>>>>>>> Socket ERROR");
+                }
+
+                @Override
+                public void onSendError(WebSocket websocket, WebSocketException cause, WebSocketFrame frame) throws Exception {
+                    super.onSendError(websocket, cause, frame);
+
+                    Log.d(LOG_TAG, ">>>>>>>>>>> Socket send error");
+                }
+
+                @Override
+                public void onTextMessage(WebSocket websocket, String text) throws Exception {
+                    super.onTextMessage(websocket, text);
+
+                    Log.d(LOG_TAG, ">>>>>>>>>>> Socket text");
+                }
+
+                @Override
+                public void onTextMessageError(WebSocket websocket, WebSocketException cause, byte[] data) throws Exception {
+                    super.onTextMessageError(websocket, cause, data);
+
+                    Log.d(LOG_TAG, ">>>>>>>>>>> Socket text error");
+                }
             });
 
             socket.connect();
         } catch (Exception e) {
+            Log.e(LOG_TAG, ">>>>>>>>>>> Socket ERROR", e);
+        }
+    }
 
+    public WebSocketState getStatus() {
+        if (socket != null) {
+            return socket.getState();
         }
 
+        return WebSocketState.CLOSED;
     }
 }
 

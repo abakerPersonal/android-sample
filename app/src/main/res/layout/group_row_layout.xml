@@ -4,7 +4,7 @@
 
         <variable
             name="group"
-            type="com.sonos.abaker.android_sample.discover.Group"
+            type="com.sonos.abaker.android_sample.model.Group"
             />
     </data>
 

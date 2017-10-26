@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.sonos.abaker.android_sample.connect.GroupConnectService;
 import com.sonos.abaker.android_sample.model.Group;
 
 import java.util.ArrayList;
@@ -19,7 +20,9 @@ import java.util.List;
 
 public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewHolder> {
 
-    public List<Group> groups = new ArrayList<>();
+    public interface GroupAdapterOnClickListener {
+        void onClick(Group group);
+    }
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -27,22 +30,33 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
     public class GroupViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
         private final ViewDataBinding binding;
+        private Group group;
 
-        public GroupViewHolder(ViewDataBinding binding) {
+        public GroupViewHolder(final ViewDataBinding binding, final GroupAdapterOnClickListener listener) {
             super(binding.getRoot());
             this.binding = binding;
             binding.getRoot().setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Log.d("TEST", "CLICKY CLICK");
+                    if (listener != null) {
+                        listener.onClick(group);
+                    }
                 }
             });
         }
 
         public void bind(Object obj) {
-            binding.setVariable(BR.group,obj);
+            group = (Group) obj;
+            binding.setVariable(BR.group, group);
             binding.executePendingBindings();
         }
+    }
+
+    private List<Group> groups = new ArrayList<>();
+    private GroupAdapterOnClickListener listener;
+
+    public GroupsAdapter(GroupAdapterOnClickListener listener) {
+        this.listener = listener;
     }
 
     @Override
@@ -51,7 +65,7 @@ public class GroupsAdapter extends RecyclerView.Adapter<GroupsAdapter.GroupViewH
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         ViewDataBinding binding = DataBindingUtil.inflate(layoutInflater, R.layout.group_row_layout, parent, false);
         // set the view's size, margins, paddings and layout parameters
-        return new GroupViewHolder(binding);
+        return new GroupViewHolder(binding, listener);
     }
 
     @Override

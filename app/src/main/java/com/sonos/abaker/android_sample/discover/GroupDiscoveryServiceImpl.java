@@ -204,7 +204,7 @@ public class GroupDiscoveryServiceImpl implements GroupDiscoveryService {
         Group group = parseGroupResponse(message);
         if (group.getId() != null) {
             discoveredGroups.remove(group.getUuid());
-            if(group.getNTS() == null || !group.getNTS().equals("ssdp:byebye")) {
+            if( (group.getNTS() == null || !group.getNTS().equals("ssdp:byebye")) && !group.getName().isEmpty()) {
                 discoveredGroups.put(group.getUuid(), group);
             }
         }
