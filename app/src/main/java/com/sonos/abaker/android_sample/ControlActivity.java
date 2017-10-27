@@ -12,7 +12,8 @@ import android.widget.SeekBar;
 import android.widget.ToggleButton;
 
 import com.neovisionaries.ws.client.WebSocketState;
-import com.sonos.abaker.android_sample.connect.GroupConnectService;
+import com.sonos.abaker.android_sample.connect.GroupConnectionService;
+import com.sonos.abaker.android_sample.connect.SonosSocketConnectionManager;
 import com.sonos.abaker.android_sample.control.request.BaseRequest;
 import com.sonos.abaker.android_sample.control.request.SetMuteRequest;
 import com.sonos.abaker.android_sample.control.request.SubscribeRequest;
@@ -33,13 +34,14 @@ import org.json.JSONException;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.internal.observers.BlockingBaseObserver;
 
 public class ControlActivity extends AppCompatActivity implements ControlActivityHelper {
     private static final String LOG_TAG = ControlActivity.class.getSimpleName();
 
     public static final String GROUP_EXTRA = "group";
 
-    private GroupConnectService groupConnectService;
+    private GroupConnectionService groupConnectionService;
     private Group group;
 
     ControlActvityBinding binding;
@@ -51,32 +53,24 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        groupConnectService = new GroupConnectService(this);
+        groupConnectionService = new GroupConnectionService(this);
         getExtras();
 
-
-        groupConnectService.webSocketStateObservable.subscribe(new Observer<WebSocketState>() {
-            @Override
-            public void onSubscribe(@NonNull Disposable d) {
-
-            }
-
+        groupConnectionService.webSocketStateObservable.subscribe(new BlockingBaseObserver<WebSocketState>() {
             @Override
             public void onNext(@NonNull WebSocketState webSocketState) {
                 if (webSocketState == WebSocketState.OPEN) {
                     setupAdditionalObservers();
-                    subscribeUpdates(group);
+                    groupConnectionService.subscribeUpdates(group,
+                            BaseRequest.Namespace.GROUP_VOLUME,
+                            BaseRequest.Namespace.PLAYBACK_METADATA,
+                            BaseRequest.Namespace.PLAYBACK);
                 }
             }
 
             @Override
             public void onError(@NonNull Throwable e) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
+                Log.e(LOG_TAG, "Error on Websocket status", e);
             }
         });
 
@@ -85,8 +79,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         this.group = (Group) extras.getSerializable(GROUP_EXTRA);
         binding.setGroup(group);
         binding.setHandler(this);
-
-
+        
         new ConnectAsyncTask().execute(group);
     }
 
@@ -96,53 +89,22 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         bindUIElements();
     }
 
-    public void setVolume(int progress) {
-        try {
-            groupConnectService.sendCommand(new SetGroupVolumeCommandRequest(group, progress));
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Error sending command", e);
-        }
-    }
-
-    public void mute(boolean mute) {
-        try {
-            groupConnectService.sendCommand(new SetMuteRequest(group, mute));
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Error sending command", e);
-        }
-    }
-
-    public void subscribeUpdates(Group group) {
-        try {
-            groupConnectService.sendCommand(new SubscribeRequest(BaseRequest.Namespace.GROUP_VOLUME, group));
-            groupConnectService.sendCommand(new SubscribeRequest(BaseRequest.Namespace.PLAYBACK_METADATA, group));
-            groupConnectService.sendCommand(new SubscribeRequest(BaseRequest.Namespace.PLAYBACK, group));
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Error sending command", e);
-        }
-    }
-
     @Override
     public void onClickSetVolumeToZero(View view) {
-        try {
-            groupConnectService.sendCommand(new SetGroupVolumeCommandRequest(group, 0));
-        } catch (JSONException e) {
-            Log.e(LOG_TAG, "Error sending command", e);
-        }
+        //TODO: Resuse this for playback
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        groupConnectService.closeSocket();
+        groupConnectionService.disconnectFromGroup();
     }
 
     private class ConnectAsyncTask extends AsyncTask<Group, Void, Void> {
 
         @Override
         protected Void doInBackground(Group... group) {
-            groupConnectService.openSocket(group[0].getWebsocketURL());
-            Log.d(LOG_TAG, groupConnectService.getStatus().toString());
+            groupConnectionService.connectToGroup(group[0]);
             return null;
         }
     }
@@ -163,7 +125,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                setVolume(progress);
+                groupConnectionService.setVolume(group, progress);
             }
 
             @Override
@@ -176,16 +138,15 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         muteButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                mute(isChecked);
+                groupConnectionService.mute(group, isChecked);
             }
         });
-        ProgressBar progressBar = (ProgressBar) findViewById(R.id.group_playback_progress_bar);
 
     }
 
     private void setupAdditionalObservers() {
 
-        groupConnectService
+        groupConnectionService
                 .commandResponseObservable
                 .filter(new ResponseFilter(GroupVolumeResponse.class))
                 .subscribe(new ResponseObserver() {
@@ -197,7 +158,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
                     }
                 });
 
-        groupConnectService
+        groupConnectionService
                 .commandResponseObservable
                 .filter(new ResponseFilter(PlaybackMetadataResponse.class))
                 .subscribe(new ResponseObserver() {
@@ -208,7 +169,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
                     }
                 });
 
-        groupConnectService
+        groupConnectionService
                 .commandResponseObservable
                 .filter(new ResponseFilter(PlaybackResponse.class))
                 .subscribe(new ResponseObserver() {

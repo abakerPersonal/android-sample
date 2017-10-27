@@ -3,12 +3,10 @@ package com.sonos.abaker.android_sample;
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.sonos.abaker.android_sample.connect.GroupConnectService;
 import com.sonos.abaker.android_sample.model.Group;
 
 import java.util.ArrayList;

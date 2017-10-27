@@ -8,6 +8,7 @@ import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketException;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import com.neovisionaries.ws.client.WebSocketFrame;
+import com.neovisionaries.ws.client.WebSocketListener;
 import com.neovisionaries.ws.client.WebSocketState;
 import com.sonos.abaker.android_sample.R;
 import com.sonos.abaker.android_sample.control.response.BaseResponse;
@@ -35,8 +36,8 @@ import io.reactivex.subjects.PublishSubject;
  * Created by alan.baker on 10/25/17.
  */
 
-public class GroupConnectService {
-    private static final String LOG_TAG = GroupConnectService.class.getSimpleName();
+public class SonosSocketConnectionManager {
+    private static final String LOG_TAG = SonosSocketConnectionManager.class.getSimpleName();
 
     private final int CONNECTION_TIMEOUT = 3000;
 
@@ -49,7 +50,7 @@ public class GroupConnectService {
     public final Observable<BaseResponse> commandResponseObservable = commandResponsePublishSubject;
     public final Observable<WebSocketState> webSocketStateObservable = webSocketStatePublishSubject;
 
-    public GroupConnectService(Context context) {
+    public SonosSocketConnectionManager(Context context) {
         factory = new WebSocketFactory();
         try {
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -68,63 +69,17 @@ public class GroupConnectService {
         }
     }
 
-
     public void sendCommand(BaseRequest command) throws JSONException {
         Log.d(LOG_TAG, "Sending Command" + command.toJsonString() );
         socket.sendText(command.toJsonString());
     }
 
-    public void openSocket(final String socketUri) {
+    public void openSocket(final String socketUri, WebSocketListener sockectAdapter) {
         try {
             socket = factory.createSocket(socketUri);
-            //socket.addHeader("Sec-WebSocket-Protocol", "v1.api.smartspeaker.audio");
+            //socket.addHeader("Sec-WebSocket-Protocol", "v1.api.smartspeaker.audio");  TODO: Was not allowing the socket to open but docs say to add it
             socket.addHeader("X-Sonos-Api-Key", "4073edd5-afe9-47a2-ae79-4e90fc4f2236");
-            socket.addListener(new WebSocketAdapter() {
-                @Override
-                public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
-                    super.onConnected(websocket, headers);
-                    Log.v(LOG_TAG, "Socket Connected");
-                    webSocketStatePublishSubject.onNext(socket.getState());
-                }
-
-                @Override
-                public void onDisconnected(WebSocket websocket, WebSocketFrame serverCloseFrame, WebSocketFrame clientCloseFrame, boolean closedByServer) throws Exception {
-                    super.onDisconnected(websocket, serverCloseFrame, clientCloseFrame, closedByServer);
-                    webSocketStatePublishSubject.onNext(socket.getState());
-                    commandResponsePublishSubject.onComplete();
-                    webSocketStatePublishSubject.onComplete();
-                }
-
-                @Override
-                public void onConnectError(WebSocket websocket, WebSocketException exception) throws Exception {
-                    super.onConnectError(websocket, exception);
-                    Log.e(LOG_TAG, "Socket Connection Error", exception);
-                }
-
-                @Override
-                public void onError(WebSocket websocket, WebSocketException cause) throws Exception {
-                    super.onError(websocket, cause);
-                    Log.e(LOG_TAG, "Socket Error", cause);
-                }
-
-                @Override
-                public void onTextMessage(WebSocket websocket, String text) throws Exception {
-                    super.onTextMessage(websocket, text);
-                    Log.v(LOG_TAG, "Socket Response: " + text);
-                    try {
-                        commandResponsePublishSubject.onNext(ResponseParser.fromJsonString(text));
-                    } catch (JSONException e) {
-                        commandResponsePublishSubject.onError(e);
-                    }
-                }
-
-                @Override
-                public void onTextMessageError(WebSocket websocket, WebSocketException cause, byte[] data) throws Exception {
-                    super.onTextMessageError(websocket, cause, data);
-                    Log.e(LOG_TAG, "Socket Text Error", cause);
-                    commandResponsePublishSubject.onError(cause);
-                }
-            });
+            socket.addListener(sockectAdapter);
             socket.connect();
         } catch (Exception e) {
             Log.e(LOG_TAG, "Socket ERROR", e);
