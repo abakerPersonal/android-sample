@@ -1,12 +1,15 @@
 package com.sonos.abaker.android_sample.model;
 
+import android.os.Parcelable;
+
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * Created by alan.baker on 10/23/17.
  */
 
-public class Group {
+public class Group implements Serializable {
     private String id;
     private String name;
     private String configId;

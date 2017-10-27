@@ -1,4 +1,4 @@
-package com.sonos.abaker.android_sample;
+package com.sonos.abaker.android_sample.handlers;
 
 import android.view.View;
 

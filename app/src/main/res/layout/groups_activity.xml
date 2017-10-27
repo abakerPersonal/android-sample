@@ -2,7 +2,7 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
     <data>
         <variable name="group" type="com.sonos.abaker.android_sample.model.Group"/>
-        <variable name="handler" type="com.sonos.abaker.android_sample.GroupsActivityHandler" />
+        <variable name="handler" type="com.sonos.abaker.android_sample.handlers.GroupsActivityHandler" />
     </data>
 
     <RelativeLayout

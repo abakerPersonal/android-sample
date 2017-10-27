@@ -1,7 +1,7 @@
 package com.sonos.abaker.android_sample;
 
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
-import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -9,8 +9,8 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 
-import com.sonos.abaker.android_sample.connect.GroupConnectService;
 import com.sonos.abaker.android_sample.databinding.GroupsActivityBinding;
+import com.sonos.abaker.android_sample.handlers.GroupsActivityHandler;
 import com.sonos.abaker.android_sample.model.Group;
 import com.sonos.abaker.android_sample.discover.GroupDiscoveryService;
 import com.sonos.abaker.android_sample.discover.GroupDiscoveryServiceImpl;
@@ -23,11 +23,12 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 
+import static com.sonos.abaker.android_sample.ControlActivity.GROUP_EXTRA;
+
 public class GroupsActivity extends AppCompatActivity implements GroupsActivityHandler, GroupsAdapter.GroupAdapterOnClickListener {
     private static final String LOG_TAG = GroupsActivity.class.getSimpleName();
 
     private GroupDiscoveryService groupDiscoveryService;
-    private GroupConnectService groupConnectService;
 
     private RecyclerView recyclerView;
     private GroupsAdapter mAdapter;
@@ -38,7 +39,6 @@ public class GroupsActivity extends AppCompatActivity implements GroupsActivityH
         super.onCreate(savedInstanceState);
 
         groupDiscoveryService = new GroupDiscoveryServiceImpl();
-        groupConnectService = new GroupConnectService(this);
 
         setContentView(R.layout.groups_activity);
 
@@ -95,18 +95,9 @@ public class GroupsActivity extends AppCompatActivity implements GroupsActivityH
     public void onClick(Group group) {
         Log.d(LOG_TAG, group.getName());
 
-        new ConnectAsyncTask().execute(group);
-
-
+        Intent intent = new Intent(this, ControlActivity.class);
+        intent.putExtra(GROUP_EXTRA, group);
+        startActivity(intent);
     }
 
-    private class ConnectAsyncTask extends AsyncTask<Group, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Group... group) {
-            groupConnectService.openSocket(group[0].getWebsocketURL());
-            Log.d(LOG_TAG, groupConnectService.getStatus().toString());
-            return null;
-        }
-    }
 }
