@@ -2,9 +2,12 @@ package com.sonos.abaker.android_sample.model;
 
 import android.databinding.ObservableField;
 
-import com.sonos.abaker.android_sample.BR;
+
 import com.sonos.abaker.android_sample.control.response.PlaybackMetadataResponse;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.security.PublicKey;
 import java.util.Observer;
 
 /**
@@ -12,6 +15,7 @@ import java.util.Observer;
  */
 
 public class ControlActivityPageModel {
+    private static final String LOG_TAG = ControlActivityPageModel.class.getSimpleName();
 
     public final ObservableField<String> trackName = new ObservableField<>("No Music");
     public final ObservableField<String> artistAndAlbum = new ObservableField<>("");

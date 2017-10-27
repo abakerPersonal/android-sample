@@ -1,14 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" >
     <data>
         <variable name="group" type="com.sonos.abaker.android_sample.model.Group"/>
         <variable name="pageModel" type="com.sonos.abaker.android_sample.model.ControlActivityPageModel"/>
-        <variable name="handler" type="com.sonos.abaker.android_sample.handlers.ControlActivityHelper" />
+        <variable name="handler" type="com.sonos.abaker.android_sample.handlers.ControlActivityHandler" />
     </data>
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/group_album_image"
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/album_art_square"
+            />
 
         <TextView
             android:id="@+id/group_name"
@@ -39,7 +48,7 @@
             android:id="@+id/control_track_artist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
+            android:layout_below="@id/group_album_image"
             android:layout_marginTop="16dp"
             android:text="@{pageModel.trackName}"
             android:textSize="20dp"
@@ -60,13 +69,51 @@
             android:textAlignment="center"
             />
 
+        <LinearLayout
+            android:id="@+id/group_playback_controls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/group_playback_progress_bar"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/group_play_prev"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_below="@id/group_mute_button"
+                android:text="Prev"
+                android:onClick="@{handler::onClickPrev}"
+                android:layout_marginBottom="0dp" />
+
+            <Button
+                android:id="@+id/group_play_pause"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_below="@id/group_mute_button"
+                android:text="Play"
+                android:onClick="@{handler::onClickPlayPause}"
+                android:layout_marginBottom="0dp" />
+
+            <Button
+                android:id="@+id/group_play_next"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:layout_below="@id/group_mute_button"
+                android:text="Next"
+                android:onClick="@{handler::onClickNext}"
+                android:layout_marginBottom="0dp" />
+
+
+        </LinearLayout>
+
 
         <ToggleButton
             android:id="@+id/group_mute_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
-            android:layout_below="@+id/group_playback_progress_bar"
+            android:layout_below="@+id/group_playback_controls"
             android:layout_alignParentLeft="true"
             android:layout_marginLeft="8dp"
             android:layout_marginTop="8dp"
@@ -89,18 +136,6 @@
             android:layout_marginBottom="15dp"
             android:max="100"
             android:progress="@{pageModel.volume}" />
-
-
-
-        <!--<Button-->
-            <!--android:id="@+id/group_refresh_button"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="44dp"-->
-            <!--android:layout_below="@id/group_mute_button"-->
-            <!--android:text="Pause"-->
-            <!--android:onClick="@{handler::onClickSetVolumeToZero}"-->
-            <!--android:layout_marginBottom="0dp" />-->
-
 
     </RelativeLayout>
 

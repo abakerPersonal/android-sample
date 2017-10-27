@@ -4,6 +4,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+
 /**
  * Created by alan.baker on 10/27/17.
  */
@@ -25,7 +28,13 @@ public class PlaybackMetadataResponse extends BaseResponse {
         JSONObject currentItem = container.getJSONObject("currentItem");
         JSONObject track = currentItem.getJSONObject("track");
         trackName = track.getString("name");
-        imageUrl = track.getString("imageUrl");
+
+        try {
+            imageUrl = URLDecoder.decode(track.getString("imageUrl"), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            //Do Nothing
+        }
+
         durationMillis = track.getInt("durationMillis");
         JSONObject artist = track.getJSONObject("artist");
         artistName = artist.getString("name");

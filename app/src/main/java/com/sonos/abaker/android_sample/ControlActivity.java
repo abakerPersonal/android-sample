@@ -7,36 +7,32 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.ToggleButton;
 
 import com.neovisionaries.ws.client.WebSocketState;
 import com.sonos.abaker.android_sample.connect.GroupConnectionService;
-import com.sonos.abaker.android_sample.connect.SonosSocketConnectionManager;
 import com.sonos.abaker.android_sample.control.request.BaseRequest;
-import com.sonos.abaker.android_sample.control.request.SetMuteRequest;
-import com.sonos.abaker.android_sample.control.request.SubscribeRequest;
 import com.sonos.abaker.android_sample.control.response.BaseResponse;
-import com.sonos.abaker.android_sample.control.request.SetGroupVolumeCommandRequest;
 import com.sonos.abaker.android_sample.control.response.GroupVolumeResponse;
 import com.sonos.abaker.android_sample.control.response.PlaybackResponse;
 import com.sonos.abaker.android_sample.control.response.PlaybackMetadataResponse;
 import com.sonos.abaker.android_sample.control.response.ResponseFilter;
 import com.sonos.abaker.android_sample.control.response.ResponseObserver;
 import com.sonos.abaker.android_sample.databinding.ControlActvityBinding;
-import com.sonos.abaker.android_sample.handlers.ControlActivityHelper;
+import com.sonos.abaker.android_sample.handlers.ControlActivityHandler;
 import com.sonos.abaker.android_sample.model.ControlActivityPageModel;
 import com.sonos.abaker.android_sample.model.Group;
+import com.squareup.picasso.Picasso;
 
-import org.json.JSONException;
+import java.util.List;
 
-import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.internal.observers.BlockingBaseObserver;
 
-public class ControlActivity extends AppCompatActivity implements ControlActivityHelper {
+public class ControlActivity extends AppCompatActivity implements ControlActivityHandler {
     private static final String LOG_TAG = ControlActivity.class.getSimpleName();
 
     public static final String GROUP_EXTRA = "group";
@@ -48,6 +44,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
     private SeekBar seekBar;
     private ToggleButton muteButton;
     private ProgressBar progressBar;
+    private ImageView imageView;
     private final ControlActivityPageModel pageModel = new ControlActivityPageModel();
 
     @Override
@@ -79,7 +76,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         this.group = (Group) extras.getSerializable(GROUP_EXTRA);
         binding.setGroup(group);
         binding.setHandler(this);
-        
+
         new ConnectAsyncTask().execute(group);
     }
 
@@ -90,14 +87,24 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
     }
 
     @Override
-    public void onClickSetVolumeToZero(View view) {
-        //TODO: Resuse this for playback
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
         groupConnectionService.disconnectFromGroup();
+    }
+
+    @Override
+    public void onClickPrev(View view) {
+
+    }
+
+    @Override
+    public void onClickNext(View view) {
+
+    }
+
+    @Override
+    public void onClickPlayPause(View view) {
+
     }
 
     private class ConnectAsyncTask extends AsyncTask<Group, Void, Void> {
@@ -142,6 +149,17 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
             }
         });
 
+        imageView = (ImageView) findViewById(R.id.group_album_image);
+        
+    }
+
+    private void loadImage(final String imageUrl) {
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Picasso.with(ControlActivity.this).load(imageUrl).placeholder(R.drawable.album_art_square).into(imageView);
+            }
+        });
     }
 
     private void setupAdditionalObservers() {
@@ -165,7 +183,9 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
                     @Override
                     public void onNext(@NonNull BaseResponse response) {
                         super.onNext(response);
-                        pageModel.updateMetadata((PlaybackMetadataResponse) response);
+                        PlaybackMetadataResponse metadataResponse  = (PlaybackMetadataResponse) response;
+                        pageModel.updateMetadata(metadataResponse);
+                        loadImage(metadataResponse.getImageUrl());
                     }
                 });
 
