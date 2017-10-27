@@ -4,8 +4,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Iterator;
-
 import static com.sonos.abaker.android_sample.control.response.BaseResponse.Types;
 
 /**
@@ -29,6 +27,9 @@ public class ResponseParser {
                 break;
             case METADATA_STATUS:
                 response = new PlaybackMetadataResponse(jsonResponse);
+                break;
+            case PLAYBACK_STATUS:
+                response = new PlaybackResponse(jsonResponse);
                 break;
             default:
                 response = new BaseResponse(jsonResponse);

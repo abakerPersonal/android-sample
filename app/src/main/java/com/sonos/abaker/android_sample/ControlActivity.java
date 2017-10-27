@@ -6,16 +6,22 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
+import android.widget.ToggleButton;
 
 import com.neovisionaries.ws.client.WebSocketState;
 import com.sonos.abaker.android_sample.connect.GroupConnectService;
 import com.sonos.abaker.android_sample.control.request.BaseRequest;
+import com.sonos.abaker.android_sample.control.request.SetMuteRequest;
 import com.sonos.abaker.android_sample.control.request.SubscribeRequest;
 import com.sonos.abaker.android_sample.control.response.BaseResponse;
 import com.sonos.abaker.android_sample.control.request.SetGroupVolumeCommandRequest;
 import com.sonos.abaker.android_sample.control.response.GroupVolumeResponse;
+import com.sonos.abaker.android_sample.control.response.PlaybackResponse;
 import com.sonos.abaker.android_sample.control.response.PlaybackMetadataResponse;
+import com.sonos.abaker.android_sample.control.response.ResponseFilter;
 import com.sonos.abaker.android_sample.control.response.ResponseObserver;
 import com.sonos.abaker.android_sample.databinding.ControlActvityBinding;
 import com.sonos.abaker.android_sample.handlers.ControlActivityHelper;
@@ -27,8 +33,6 @@ import org.json.JSONException;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Predicate;
-import io.reactivex.internal.observers.BlockingBaseObserver;
 
 public class ControlActivity extends AppCompatActivity implements ControlActivityHelper {
     private static final String LOG_TAG = ControlActivity.class.getSimpleName();
@@ -40,6 +44,8 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
 
     ControlActvityBinding binding;
     private SeekBar seekBar;
+    private ToggleButton muteButton;
+    private ProgressBar progressBar;
     private final ControlActivityPageModel pageModel = new ControlActivityPageModel();
 
     @Override
@@ -98,10 +104,19 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         }
     }
 
+    public void mute(boolean mute) {
+        try {
+            groupConnectService.sendCommand(new SetMuteRequest(group, mute));
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "Error sending command", e);
+        }
+    }
+
     public void subscribeUpdates(Group group) {
         try {
             groupConnectService.sendCommand(new SubscribeRequest(BaseRequest.Namespace.GROUP_VOLUME, group));
             groupConnectService.sendCommand(new SubscribeRequest(BaseRequest.Namespace.PLAYBACK_METADATA, group));
+            groupConnectService.sendCommand(new SubscribeRequest(BaseRequest.Namespace.PLAYBACK, group));
         } catch (JSONException e) {
             Log.e(LOG_TAG, "Error sending command", e);
         }
@@ -144,7 +159,6 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         binding.setPageModel(pageModel);
         binding.executePendingBindings();
 
-
         seekBar = (SeekBar) findViewById(R.id.group_seek_bar);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -158,39 +172,52 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+        muteButton = (ToggleButton) findViewById(R.id.group_mute_button);
+        muteButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                mute(isChecked);
+            }
+        });
+        ProgressBar progressBar = (ProgressBar) findViewById(R.id.group_playback_progress_bar);
+
     }
 
     private void setupAdditionalObservers() {
 
         groupConnectService
                 .commandResponseObservable
-                .filter(new Predicate<BaseResponse>() {
-                    @Override
-                    public boolean test(@NonNull BaseResponse response) throws Exception {
-                        return GroupVolumeResponse.class.isInstance(response);
-                    }
-                }).subscribe(new ResponseObserver() {
+                .filter(new ResponseFilter(GroupVolumeResponse.class))
+                .subscribe(new ResponseObserver() {
                     @Override
                     public void onNext(@NonNull BaseResponse response) {
-                        int progress = ((GroupVolumeResponse) response).getVolume();
-                        pageModel.volume.set(progress);
+                        GroupVolumeResponse groupVolumeResponse = (GroupVolumeResponse) response;
+                        pageModel.volume.set(groupVolumeResponse.getVolume());
+                        pageModel.muted.set(groupVolumeResponse.isMuted());
                     }
                 });
 
         groupConnectService
                 .commandResponseObservable
-                .filter(new Predicate<BaseResponse>() {
-                    @Override
-                    public boolean test(@NonNull BaseResponse response) throws Exception {
-                        return PlaybackMetadataResponse.class.isInstance(response);
-                    }
-                })
+                .filter(new ResponseFilter(PlaybackMetadataResponse.class))
                 .subscribe(new ResponseObserver() {
                     @Override
                     public void onNext(@NonNull BaseResponse response) {
                         super.onNext(response);
-                        PlaybackMetadataResponse metadataResponse = (PlaybackMetadataResponse) response;
-                        pageModel.trackName.set(metadataResponse.getTrackName());
+                        pageModel.updateMetadata((PlaybackMetadataResponse) response);
+                    }
+                });
+
+        groupConnectService
+                .commandResponseObservable
+                .filter(new ResponseFilter(PlaybackResponse.class))
+                .subscribe(new ResponseObserver() {
+                    @Override
+                    public void onNext(@NonNull BaseResponse response) {
+                        super.onNext(response);
+                        PlaybackResponse playbackResponse = (PlaybackResponse) response;
+                        pageModel.currentPlaybackPosition.set(playbackResponse.getPositionMillis());
+                        //TODO: Need to start timer to continously update timer
                     }
                 });
     }

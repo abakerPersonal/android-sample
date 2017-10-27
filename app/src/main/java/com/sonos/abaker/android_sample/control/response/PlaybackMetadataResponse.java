@@ -12,6 +12,7 @@ public class PlaybackMetadataResponse extends BaseResponse {
 
     private String trackName;
     private String artistName;
+    private String albumName;
     private String imageUrl;
     private String sourceName;
     private int durationMillis;
@@ -28,6 +29,12 @@ public class PlaybackMetadataResponse extends BaseResponse {
         durationMillis = track.getInt("durationMillis");
         JSONObject artist = track.getJSONObject("artist");
         artistName = artist.getString("name");
+
+        if (track.has("album")) {
+            JSONObject album = track.getJSONObject("album");
+            albumName = album.getString("name");
+        }
+
         JSONObject service = track.getJSONObject("service");
         sourceName = service.getString("name");
     }
@@ -52,11 +59,16 @@ public class PlaybackMetadataResponse extends BaseResponse {
         return durationMillis;
     }
 
+    public String getAlbumName() {
+        return albumName;
+    }
+
     @Override
     public String toString() {
         return "PlaybackMetadataResponse{" +
                 "trackName='" + trackName + '\'' +
                 ", artistName='" + artistName + '\'' +
+                ", albumName='" + albumName + '\'' +
                 ", imageUrl='" + imageUrl + '\'' +
                 ", sourceName='" + sourceName + '\'' +
                 ", durationMillis=" + durationMillis +

@@ -44,6 +44,7 @@ public class BaseRequest {
     public enum Command {
         SUBSCRIBE("subscribe"),
         GROUP_SET_VOLUME("setVolume"),
+        GROUP_SET_MUTE("setMute"),
         PAUSE("pause");
 
 
@@ -73,7 +74,7 @@ public class BaseRequest {
     protected Group group;
     protected Command command;
     protected Namespace namespace;
-    protected final HashMap<String, String> data = new HashMap<>();
+    protected final HashMap<String, Object> data = new HashMap<>();
 
     public BaseRequest(Group group) {
         this.group = group;

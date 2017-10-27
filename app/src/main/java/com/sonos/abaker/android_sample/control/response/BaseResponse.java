@@ -17,7 +17,8 @@ public class BaseResponse {
     public enum Types {
         NONE("none"),
         GROUP_VOLUME("groupVolume"),
-        METADATA_STATUS("metadataStatus");
+        METADATA_STATUS("metadataStatus"),
+        PLAYBACK_STATUS("playbackStatus");
 
         private final String text;
 

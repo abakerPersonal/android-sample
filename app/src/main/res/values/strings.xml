@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">Android-Sample</string>
-    <string name="title_activity_control">ControlActivity</string>
+    <string name="app_name">SONOS SAMPLE</string>
+    <string name="title_activity_control">Control </string>
+    <string name="mute">\u1F508</string>
 </resources>
