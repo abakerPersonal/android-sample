@@ -27,7 +27,9 @@ public class ResponseParser {
             case GROUP_VOLUME:
                 response = new GroupVolumeResponse(jsonResponse);
                 break;
-
+            case METADATA_STATUS:
+                response = new PlaybackMetadataResponse(jsonResponse);
+                break;
             default:
                 response = new BaseResponse(jsonResponse);
 

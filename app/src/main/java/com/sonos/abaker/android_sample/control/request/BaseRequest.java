@@ -19,7 +19,8 @@ public class BaseRequest {
     // SONOS control command namespaces
     public enum Namespace {
         GROUP_VOLUME("groupVolume:1"),
-        PLAYBACK_METADATA("playbackMetadata:1");
+        PLAYBACK_METADATA("playbackMetadata:1"),
+        PLAYBACK("playback:1");
 
         private final String text;
 
@@ -42,7 +43,9 @@ public class BaseRequest {
     // Sonos Control Commands
     public enum Command {
         SUBSCRIBE("subscribe"),
-        GROUP_SET_VOLUME("setVolume");
+        GROUP_SET_VOLUME("setVolume"),
+        PAUSE("pause");
+
 
         private final String text;
 

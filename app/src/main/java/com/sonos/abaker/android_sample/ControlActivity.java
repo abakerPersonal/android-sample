@@ -15,8 +15,11 @@ import com.sonos.abaker.android_sample.control.request.SubscribeRequest;
 import com.sonos.abaker.android_sample.control.response.BaseResponse;
 import com.sonos.abaker.android_sample.control.request.SetGroupVolumeCommandRequest;
 import com.sonos.abaker.android_sample.control.response.GroupVolumeResponse;
+import com.sonos.abaker.android_sample.control.response.PlaybackMetadataResponse;
+import com.sonos.abaker.android_sample.control.response.ResponseObserver;
 import com.sonos.abaker.android_sample.databinding.ControlActvityBinding;
 import com.sonos.abaker.android_sample.handlers.ControlActivityHelper;
+import com.sonos.abaker.android_sample.model.ControlActivityPageModel;
 import com.sonos.abaker.android_sample.model.Group;
 
 import org.json.JSONException;
@@ -25,6 +28,7 @@ import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Predicate;
+import io.reactivex.internal.observers.BlockingBaseObserver;
 
 public class ControlActivity extends AppCompatActivity implements ControlActivityHelper {
     private static final String LOG_TAG = ControlActivity.class.getSimpleName();
@@ -34,14 +38,15 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
     private GroupConnectService groupConnectService;
     private Group group;
 
+    ControlActvityBinding binding;
     private SeekBar seekBar;
+    private final ControlActivityPageModel pageModel = new ControlActivityPageModel();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         groupConnectService = new GroupConnectService(this);
         getExtras();
-        bindUIElements();
 
 
         groupConnectService.webSocketStateObservable.subscribe(new Observer<WebSocketState>() {
@@ -82,20 +87,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
     @Override
     protected void onStart() {
         super.onStart();
-
-        seekBar = (SeekBar) findViewById(R.id.group_seek_bar);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                setVolume(progress);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
+        bindUIElements();
     }
 
     public void setVolume(int progress) {
@@ -146,9 +138,26 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
     }
 
     private void bindUIElements() {
-        ControlActvityBinding binding = DataBindingUtil.setContentView(this, R.layout.control_actvity);
+        binding = DataBindingUtil.setContentView(this, R.layout.control_actvity);
         binding.setGroup(group);
         binding.setHandler(this);
+        binding.setPageModel(pageModel);
+        binding.executePendingBindings();
+
+
+        seekBar = (SeekBar) findViewById(R.id.group_seek_bar);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                setVolume(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
     }
 
     private void setupAdditionalObservers() {
@@ -160,24 +169,29 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
                     public boolean test(@NonNull BaseResponse response) throws Exception {
                         return GroupVolumeResponse.class.isInstance(response);
                     }
-                }).subscribe(new Observer<BaseResponse>() {
-                    @Override
-                    public void onSubscribe(@NonNull Disposable d) {}
-
+                }).subscribe(new ResponseObserver() {
                     @Override
                     public void onNext(@NonNull BaseResponse response) {
                         int progress = ((GroupVolumeResponse) response).getVolume();
-                        Log.d(LOG_TAG, "Setting volume to " + progress);
-                        seekBar.setProgress(progress);
+                        pageModel.volume.set(progress);
                     }
+                });
 
+        groupConnectService
+                .commandResponseObservable
+                .filter(new Predicate<BaseResponse>() {
                     @Override
-                    public void onError(@NonNull Throwable e) {
-                        Log.e(LOG_TAG, "Error", e);
+                    public boolean test(@NonNull BaseResponse response) throws Exception {
+                        return PlaybackMetadataResponse.class.isInstance(response);
                     }
-
+                })
+                .subscribe(new ResponseObserver() {
                     @Override
-                    public void onComplete() {}
+                    public void onNext(@NonNull BaseResponse response) {
+                        super.onNext(response);
+                        PlaybackMetadataResponse metadataResponse = (PlaybackMetadataResponse) response;
+                        pageModel.trackName.set(metadataResponse.getTrackName());
+                    }
                 });
     }
 }

@@ -45,6 +45,13 @@ public class GroupVolumeResponse extends BaseResponse {
                 "muted=" + muted +
                 ", fixed=" + fixed +
                 ", volume=" + volume +
+                ", groupId='" + groupId + '\'' +
+                ", householdId='" + householdId + '\'' +
+                ", command='" + command + '\'' +
+                ", namespace='" + namespace + '\'' +
+                ", type=" + type +
+                ", response='" + response + '\'' +
+                ", success=" + success +
                 '}';
     }
 }

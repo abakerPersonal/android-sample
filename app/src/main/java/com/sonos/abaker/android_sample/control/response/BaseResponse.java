@@ -16,7 +16,8 @@ public class BaseResponse {
 
     public enum Types {
         NONE("none"),
-        GROUP_VOLUME("groupVolume");
+        GROUP_VOLUME("groupVolume"),
+        METADATA_STATUS("metadataStatus");
 
         private final String text;
 
