@@ -78,7 +78,7 @@ public class SonosSocketConnectionManager {
         try {
             socket = factory.createSocket(socketUri);
             //socket.addHeader("Sec-WebSocket-Protocol", "v1.api.smartspeaker.audio");  TODO: Was not allowing the socket to open but docs say to add it
-            socket.addHeader("X-Sonos-Api-Key", "4073edd5-afe9-47a2-ae79-4e90fc4f2236");
+            socket.addHeader("X-Sonos-Api-Key", "INSERT API KEY HERE");
             socket.addListener(sockectAdapter);
             socket.connect();
         } catch (Exception e) {

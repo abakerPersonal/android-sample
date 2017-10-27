@@ -150,7 +150,7 @@ public class ControlActivity extends AppCompatActivity implements ControlActivit
         });
 
         imageView = (ImageView) findViewById(R.id.group_album_image);
-        
+
     }
 
     private void loadImage(final String imageUrl) {
